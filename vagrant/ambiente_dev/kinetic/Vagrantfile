@@ -1,0 +1,48 @@
+$script_mysql = <<-SCRIPT
+  apt-get update && \
+  apt-get install -y mysql-server && \
+  mysql -e "create user 'phpuser'@'%' identified by 'pass';"
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/kinetic64"
+
+  # configurando server mysqldb
+  config.vm.define "mysqldb" do |mysql|
+    mysql.vm.network "private_network", ip: "192.168.56.177"
+
+    mysql.vm.synced_folder "./configs", "/configs" # criando uma pasta de config
+    mysql.vm.synced_folder ".", "/vagrant", disabled: true #desabilitando pasta padrão que é montada por default
+
+    # provisonando maquina virtual
+    mysql.vm.provision "shell",
+      inline: "cat /configs/id_vagrant.pub >> .ssh/authorized_keys"
+    mysql.vm.provision "shell",
+      inline: $script_mysql
+    mysql.vm.provision "shell",
+      inline: "cat /configs/mysqld.cnf > /etc/mysql/mysql.conf.d/mysqld.cnf"
+    mysql.vm.provision "shell",
+      inline: "systemctl restart mysql"
+  end
+
+  # configurando server web
+  config.vm.define "phpweb" do |phpweb|
+    phpweb.vm.network "forwarded_port", guest: 8080, host: 8080
+    phpweb.vm.network "private_network", ip: "192.168.56.191"
+    
+    phpweb.vm.synced_folder "./configs", "/configs" # criando uma pasta de config
+    phpweb.vm.synced_folder "./src", "/src" # criando uma pasta de config
+    phpweb.vm.synced_folder ".", "/vagrant", disabled: true #desabilitando pasta padrão que é montada por
+
+    # provisonando maquina virtual
+    phpweb.vm.provision "shell",
+      inline: "cat /configs/id_vagrant.pub >> .ssh/authorized_keys"
+    phpweb.vm.provision "shell",
+      inline: "apt-get update && apt-get install -y puppet"
+    
+    phpweb.vm.provision "puppet" do |puppet|
+      puppet.manifests_path = "./configs/manifests"
+      puppet.manifest_file = "phpweb.pp"
+    end
+  end
+end
