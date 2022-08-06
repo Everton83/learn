@@ -1,5 +1,5 @@
 [mysqlserver]
-192.168.56.187
+192.168.56.125
 
 [mysqlserver:vars]
 ansible_user=vagrant
