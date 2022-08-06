@@ -6,6 +6,7 @@
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 
+
 $script_mysql = <<-SCRIPT
   apt-get update && \
   apt-get install -y mysql-server && \
