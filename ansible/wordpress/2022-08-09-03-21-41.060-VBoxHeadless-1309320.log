@@ -1,0 +1,12 @@
+Log created: 2022-08-09T03:21:41.609649000Z
+Process ID:  1309320 (0x13fa88)
+Parent PID:  3604 (0xe14)
+Executable:  /usr/lib/virtualbox/VBoxHeadless
+Arg[0]: /usr/lib/virtualbox/VBoxHeadless
+Arg[1]: --comment
+Arg[2]: wordpress
+Arg[3]: --startvm
+Arg[4]: 792aacd3-f63a-4e52-8659-5e5a724fc91c
+Arg[5]: --vrde
+Arg[6]: config
+AddRef: illegal refcnt=3221225469 state=2

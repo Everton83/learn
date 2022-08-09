@@ -1,3 +1,5 @@
 [wordpress] # Nome do grupo de maquinas
 192.168.56.148 ansible_user=vagrant ansible_ssh_private_key_file=".vagrant/machines/wordpress/virtualbox/private_key"# servidor
 
+[database] # Nome do grupo de maquinas
+192.168.56.149 ansible_user=vagrant ansible_ssh_private_key_file=".vagrant/machines/mysql/virtualbox/private_key"# servidor

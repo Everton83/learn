@@ -1,5 +1,53 @@
 ---
-- hosts: all # quais hosts serão executados?
+- hosts: database
+  handlers:
+    - name: restart mysql
+      service:
+        name: mysql
+        state: restarted
+      become: yes
+
+  tasks:
+
+    - name: 'Instala pacotes de dependencias do sistema operacional' # nome da task
+      apt: # gerenciador a ser utilizado
+        name: "{{ item }}" # variavel especial do ansible
+        state: latest # versão do pacote
+      become: yes # executado com root sim ou não?
+      with_items: # looping de pacotes a ser instalado
+        - mysql-server
+        - python-mysqldb
+
+    - name: 'Criar o nome do MySQL'
+      mysql_db:
+        name: "{{ wp_db_name }}"
+        login_user: root
+        #login_password:
+        state: present # criar banco
+        #state: absent # deletar banco
+
+    - name: 'Cria o usuário do MySQL'
+      mysql_user:
+        login_user: root
+        name: "{{ wp_username }}"
+        password: "{{ wp_user_password }}"
+        priv: '{{ wp_db_name }}.*:ALL,GRANT'
+        state: present
+        host: "{{ item }}"
+      with_items:
+        - 'localhost'
+        - '127.0.0.1'
+        - "{{ wp_host_ip }}"
+    
+    - name: 'Configura MySQL para aceitar conexões remotas'
+      copy:
+        src: 'files/my.cnf'
+        dest: '/etc/mysql/my.cnf'
+      become: yes
+      notify:
+        - restart mysql
+
+- hosts: wordpress # quais hosts serão executados?
   handlers:
     - name: restart apache2
       service:
@@ -22,27 +70,9 @@
         - php5-gd
         - libssh2-php
         - php5-mcrypt
-        - mysql-server-5.6
-        - python-mysqldb
         - php5-mysql
         state: latest
       become: yes
-
-    - name: 'Criar o nome do MySQL'
-      mysql_db:
-        name: wordpress_db
-        login_user: root
-        #login_password:
-        state: present # criar banco
-        #state: absent # deletar banco
-
-    - name: 'Cria o usuário do MySQL'
-      mysql_user:
-        login_user: root
-        name: wordpress_user
-        password: 12345
-        priv: 'wordpress_db.*:ALL,GRANT'
-        state: present
 
     - name: 'Efetuar o download do wordpress'
       get_url:
@@ -58,21 +88,22 @@
     
     - name: 'Copia o wp-config-sample.php para wp-config.php'
       copy:
-        src: '/var/www/wordpress/wp-config-sample.php'
-        dest: '/var/www/wordpress/wp-config.php'
+        src: "{{ wp_installation_dir }}/wp-config-sample.php"
+        dest: "{{ wp_installation_dir }}/wp-config.php"
         remote_src: yes
       become: yes
 
     - name: 'Configura o wp-config com as entradas do banco de dados'
       replace:
-        path: '/var/www/wordpress/wp-config.php'
+        path: "{{ wp_installation_dir }}/wp-config.php"
         regexp: "{{ item.regex }}"
         replace: "{{ item.value }}"
         #backup: yes
       with_items:
-        - { regex: 'database_name_here', value: 'wordpress_db' }
-        - { regex: 'username_here', value: 'wordpress_user' }
-        - { regex: 'password_here', value: '12345' }
+        - { regex: 'database_name_here', value: "{{ wp_db_name }}" }
+        - { regex: 'username_here', value: "{{ wp_username }}" }
+        - { regex: 'password_here', value: "{{ wp_user_password }}" }
+        - { regex: 'localhost', value: "{{ wp_db_ip }}" }
       become: yes
 
     - name: 'Copia do arquivo de configuração do apache'
