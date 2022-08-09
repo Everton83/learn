@@ -1,6 +1,18 @@
 ---
 - hosts: all # quais hosts serão executados?
+  handlers:
+    - name: restart apache2
+      service:
+        name: apache2
+        state: restarted
+      become: yes
+
   tasks:
+    - name: 'Adicionando repositorio no ubuntu'
+      apt_repository:
+        repo: 'ppa:ondrej/php'
+      become: yes
+        
     - name: 'Instalando pacotes do sistema operacional'
       apt:
         name:
@@ -34,7 +46,7 @@
 
     - name: 'Efetuar o download do wordpress'
       get_url:
-        url: 'https://wordpress.org/latest.tar.gz'
+        url: 'https://wordpress.org/wordpress-5.1.13.tar.gz'
         dest: '/tmp/wordpress.tar.gz'
 
     - name: 'Descompactar arquivo wordpress.tar.gz'
@@ -62,3 +74,12 @@
         - { regex: 'username_here', value: 'wordpress_user' }
         - { regex: 'password_here', value: '12345' }
       become: yes
+
+    - name: 'Copia do arquivo de configuração do apache'
+      copy:
+        src: 'files/000-default.conf'
+        dest: '/etc/apache2/sites-enabled/000-default.conf'
+        remote_src: no
+      become: yes
+      notify:
+        - restart apache2
