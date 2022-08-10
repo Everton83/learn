@@ -1,0 +1,5 @@
+---
+## DECLARANDO VALORES PADRÕES DE VARIAVÉS NÃO DECLARADAS##
+wp_host_ip:
+  - 'localhost'
+  - '127.0.0.1'
